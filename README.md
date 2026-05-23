@@ -1,7 +1,7 @@
 # Comparative time series analysis and forecasting of mobile network traffic
 ### Milan TIM dataset ML techniques I formative assignment
 
----
+
 
 ## Project Ooerview
 
@@ -15,7 +15,7 @@ exploratory data analysis, and
 time series forecasting using three models 
 Holt-Winters, LSTM, and GRU.
 
----
+
 
 ## Repository Structure
 
@@ -43,7 +43,7 @@ Holt-Winters, LSTM, and GRU.
 └── README.md                    # This file
 ```
 
----
+
 
 ## Dataset
 
@@ -60,7 +60,7 @@ archives). Running `task1.ipynb` processes the raw zip files and produces
 `milan_traffic_UltraClean.csv` (4.54 GB), which is required to run Tasks 2
 and 3. Only `SquareId`, `TimeInterval`, and `Internet` fields are used.
 
----
+
 
 ## How to Run
 
@@ -73,11 +73,11 @@ pip install pandas numpy matplotlib scikit-learn statsmodels tensorflow==2.15.0 
 ```
 
 > **Python version**: 3.11.8
-> **TensorFlow version**: 2.15.0 (required — TF 2.21.0 has a known
+> **TensorFlow version**: 2.15.0 (required  TF 2.21.0 has a known
 > incompatibility with Python 3.11 on Windows)
 > **OS tested on**: Windows 11 (also compatible with Linux and macOS)
 
-### Step 1 — Generate the clean dataset (Task 1)
+### Step 1 : Generate the clean dataset (Task 1)
 
 > Skip this step you already have `milan_traffic_UltraClean.csv` 
 
@@ -92,30 +92,27 @@ pip install pandas numpy matplotlib scikit-learn statsmodels tensorflow==2.15.0 
 > **On Linux/macOS**: Update the zip file paths in `task1.ipynb` Cell 1
 > to match your local download location before running.
 
-### Step 2 — Run Exploratory Data Analysis (Task 2)
+### Step 2 : Run Exploratory Data Analysis (Task 2)
 
 1. Ensure `milan_traffic_UltraClean.csv` and `milano-grid.geojson` are in
    the same directory as `task2-EDA.ipynb`
 2. Open `task2-EDA.ipynb` and run all cells in order
 3. Outputs: PDF plots, heatmaps, ACF/PACF plots, stationarity analysis
 
-### Step 3 — Run Forecasting Models (Task 3)
+### Step 3 : Run Forecasting Models (Task 3)
 
 1. Ensure `milan_traffic_UltraClean.csv` is in the same directory as
    `task3-Forecasting_.ipynb`
 2. Open `task3-Forecasting_.ipynb` and run all cells in order
 3. Cell execution order:
-   - **Cell 1** — Setup, imports, load all 3 areas (~80 seconds)
-   - **Cell 2** — Holt-Winters across all 3 areas (~3 seconds total)
-   - **Cell 3** — LSTM across all 3 areas (~varies by hardware)
-   - **Cell 4** — GRU across all 3 areas (~varies by hardware)
-   - **Cell 5** — Final comparison tables
-4. All 9 forecast plots and 6 training loss plots are saved automatically
+                  run each cell chronologically
+   -
+4. All 9 forecast plots and 6 training loss plots, and traffic distribution plot for all 3 areas are saved automatically 
 
 > **Important**: Run cells strictly in order. Do not skip Cell 1 as all
 > subsequent cells depend on variables defined there.
 
----
+
 
 ## Models Implemented
 
@@ -126,9 +123,9 @@ pip install pandas numpy matplotlib scikit-learn statsmodels tensorflow==2.15.0 
 | GRU | Neural Network (3-layer) | N/A | 288 steps (48 hrs) |
 
 All models are trained and evaluated independently on three geographical areas:
-- **Square 5161** — Highest total traffic area in Milan
-- **Square 4159** — Moderate traffic area
-- **Square 4556** — Mixed traffic area
+- **Square 5161** : Highest total traffic area in Milan
+- **Square 4159** :  Moderate traffic area
+- **Square 4556** : Mixed traffic area
 
 Test period: **December 16–22** (1008 timesteps = 7 days × 144 steps/day)
 Training period: **14 days immediately preceding the test week** (2016 steps)
@@ -162,7 +159,7 @@ Training period: **14 days immediately preceding the test week** (2016 steps)
 > (up to 52% in some areas). SMAPE is used as the primary percentage metric
 > as it handles near-zero values symmetrically and is bounded [0, 200%].
 
----
+
 
 ## Hardware & Software
 
@@ -175,35 +172,43 @@ Training period: **14 days immediately preceding the test week** (2016 steps)
 | Pandas | Latest |
 | Scikit-learn | Latest |
 | Statsmodels | Latest |
-| RAM | Standard laptop — chunked loading required for 5GB dataset |
+| RAM | Standard laptop chunked loading required for 5GB dataset |
 
 
 
 ## Key Design Decisions
 
-**1. Chunked data loading** — The 5 GB dataset cannot be loaded into memory
+**1. Chunked data loading** : The 5 GB dataset cannot be loaded into memory
 at once on standard hardware. A streaming pipeline reads directly from zip
 archives in micro-chunks, filtering and writing only the 3 required columns
 to a clean CSV file. This reduced the working dataset footprint significantly.
 
-**2. Data type optimisation** — `SquareId` cast to `int32` and `Internet`
+**2. Data type optimisation** : `SquareId` cast to `int32` and `Internet`
 to `float32`, halving the default 64-bit memory requirement.
 
-**3. Holt-Winters over SARIMA** — SARIMA with seasonal period s=144 was
+  (i evaluated or attempted the ARIMA model just to see what happened when a not seasonal model is used on seasonal data.
+
+the moded It completed in 3.23 seconds
+but produced a MAPE of 490,102%  effectively predicting a flat near-zero
+line with no ability to capture the 24-hour daily cycle. ARIMA has no
+seasonal component and cannot model the periodic traffic patterns that
+dominate this dataset. It was discarded immediately after this evaluation.)
+
+**3. Holt-Winters over SARIMA** : SARIMA with seasonal period s=144 was
 attempted but ran for over 58 minutes without convergence. Holt-Winters
 handles the same 24-hour seasonality in O(n) time and completed in under
 1 second per area.
 
-**4. 48-hour lookback window (SEQ_LEN=288)** — A 24-hour window (144 steps)
+**4. 48-hour lookback window (SEQ_LEN=288)** : a 24-hour window (144 steps)
 was initially used but extended to 48 hours to capture day-over-day patterns
 and improve spike prediction in LSTM and GRU.
 
-**5. tanh activation in Dense layers** — ReLU was initially used but caused
+**5. tanh activation in Dense layers** : initially, i used ReLU was initially used but caused
 training plateaus. tanh is consistent with the internal activations of LSTM
 and GRU cells and handles the near-zero traffic values without dying neuron
 problems.
 
----
+
 
 ## Known Limitations
 
@@ -214,16 +219,16 @@ problems.
   capacity with limited training data
 - Training times for LSTM and GRU depend heavily on available hardware
 
----
+
 
 ## References
 
 - Barlacchi et al. (2015). "A multi-source dataset of urban life in the city
   of Milan and the Province of Trentino." Scientific Data 2, 150055.
   https://doi.org/10.1038/sdata.2015.55
-- Harvard Dataverse — Telecommunications activity dataset:
+- Harvard Dataverse : Telecommunications activity dataset:
   https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/EGZHFV
-- Harvard Dataverse — Milan grid:
+- Harvard Dataverse : Milan grid:
   https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/QJWLFU
 - TensorFlow/Keras: https://www.tensorflow.org
 - Statsmodels: https://www.statsmodels.org
